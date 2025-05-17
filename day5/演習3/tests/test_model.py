@@ -171,3 +171,24 @@ def test_model_reproducibility(sample_data, preprocessor):
     assert np.array_equal(
         predictions1, predictions2
     ), "モデルの予測結果に再現性がありません"
+
+
+def test_compare_with_previous_model(train_model):
+    """保存済み旧モデルとの精度比較（劣化チェック）"""
+    model, X_test, y_test = train_model
+
+    # 過去モデルの読み込み
+    previous_model_path = os.path.join(MODEL_DIR, "titanic_model_previous.pkl")
+    if not os.path.exists(previous_model_path):
+        pytest.skip("過去モデルが存在しないためスキップします")
+
+    with open(previous_model_path, "rb") as f:
+        prev_model = pickle.load(f)
+
+    # 精度を比較
+    prev_accuracy = accuracy_score(y_test, prev_model.predict(X_test))
+    new_accuracy = accuracy_score(y_test, model.predict(X_test))
+
+    assert (
+        new_accuracy >= prev_accuracy
+    ), f"新モデルの精度が劣化（旧: {prev_accuracy:.3f}, 新: {new_accuracy:.3f})"
